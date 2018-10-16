@@ -1254,6 +1254,7 @@ void AnimationTrackEdit::_notification(int p_what) {
 				float offset = animation->track_get_key_time(track, i) - timeline->get_value();
 				if (editor->is_key_selected(track, i) && editor->is_moving_selection()) {
 					offset += editor->get_moving_selection_offset();
+					offset = get_editor()->snap_time(offset);
 				}
 				offset = offset * scale + limit;
 				if (i < animation->track_get_key_count(track) - 1) {
@@ -1261,12 +1262,12 @@ void AnimationTrackEdit::_notification(int p_what) {
 					float offset_n = animation->track_get_key_time(track, i + 1) - timeline->get_value();
 					if (editor->is_key_selected(track, i + 1) && editor->is_moving_selection()) {
 						offset_n += editor->get_moving_selection_offset();
+						//offset_n = get_editor()->snap_time(offset_n);
 					}
 					offset_n = offset_n * scale + limit;
 
 					draw_key_link(i, scale, int(offset), int(offset_n), limit, limit_end);
 				}
-
 				draw_key(i, scale, int(offset), editor->is_key_selected(track, i), limit, limit_end);
 			}
 		}
@@ -3882,7 +3883,7 @@ void AnimationTrackEditor::_move_selection_begin() {
 void AnimationTrackEditor::_move_selection(float p_offset) {
 	moving_selection_offset = p_offset;
 	if (snap->is_pressed() && step->get_value() != 0) {
-		moving_selection_offset = Math::stepify(moving_selection_offset, step->get_value());
+		//moving_selection_offset = Math::stepify(moving_selection_offset, step->get_value());
 	}
 	for (int i = 0; i < track_edits.size(); i++) {
 		track_edits[i]->update();
@@ -4003,7 +4004,7 @@ void AnimationTrackEditor::_move_selection_commit() {
 	// 2- remove overlapped keys
 	for (Map<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
 
-		float newtime = E->get().pos + motion;
+		float newtime = Math::stepify(E->get().pos + motion, step->get_value());
 		int idx = animation->track_find_key(E->key().track, newtime, true);
 		if (idx == -1)
 			continue;
@@ -4027,7 +4028,7 @@ void AnimationTrackEditor::_move_selection_commit() {
 	// 3-move the keys (re insert them)
 	for (Map<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
 
-		float newpos = E->get().pos + motion;
+		float newpos = Math::stepify(E->get().pos + motion, step->get_value());
 		/*
 		if (newpos<0)
 			continue; //no add at the beginning
@@ -4038,7 +4039,7 @@ void AnimationTrackEditor::_move_selection_commit() {
 	// 4-(undo) remove inserted keys
 	for (Map<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
 
-		float newpos = E->get().pos + motion;
+		float newpos = Math::stepify(E->get().pos + motion, step->get_value());
 		/*
 		if (newpos<0)
 			continue; //no remove what no inserted
@@ -4074,7 +4075,7 @@ void AnimationTrackEditor::_move_selection_commit() {
 	for (Map<SelectedKey, KeyInfo>::Element *E = selection.back(); E; E = E->prev()) {
 
 		float oldpos = E->get().pos;
-		float newpos = oldpos + motion;
+		float newpos = Math::stepify(E->get().pos + motion, step->get_value());
 		//if (newpos>=0)
 		undo_redo->add_do_method(this, "_select_at_anim", animation, E->key().track, newpos);
 		undo_redo->add_undo_method(this, "_select_at_anim", animation, E->key().track, oldpos);
