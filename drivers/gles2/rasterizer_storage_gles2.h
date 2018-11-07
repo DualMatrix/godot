@@ -43,7 +43,6 @@
 /*
 #include "shaders/blend_shape.glsl.gen.h"
 #include "shaders/canvas.glsl.gen.h"
-#include "shaders/copy.glsl.gen.h"
 #include "shaders/particles.glsl.gen.h"
 */
 
@@ -430,6 +429,7 @@ public:
 
 			int light_mode;
 			*/
+
 			bool uses_screen_texture;
 			bool uses_screen_uv;
 			bool uses_time;

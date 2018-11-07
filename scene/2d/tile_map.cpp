@@ -593,7 +593,7 @@ void TileMap::update_dirty_quadrants() {
 
 	if (quadrant_order_dirty) {
 
-		int index = -0x80000000; //always must be drawn below children
+		int index = -(int64_t)0x80000000; //always must be drawn below children
 		for (Map<PosKey, Quadrant>::Element *E = quadrant_map.front(); E; E = E->next()) {
 
 			Quadrant &q = E->get();
@@ -1445,6 +1445,11 @@ Vector2 TileMap::world_to_map(const Vector2 &p_pos) const {
 		default: {}
 	}
 
+	// Account for precision errors on the border (GH-23250).
+	// 0.00005 is 5*CMP_EPSILON, results would start being unpredictible if
+	// cell size is > 15,000, but we can hardly have more precision anyway with
+	// floating point.
+	ret += Vector2(0.00005, 0.00005);
 	return ret.floor();
 }
 

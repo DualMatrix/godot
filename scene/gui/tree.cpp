@@ -2519,7 +2519,7 @@ void Tree::_gui_input(Ref<InputEvent> p_event) {
 					pressing_for_editor = false;
 				}
 
-				if (cache.click_type == Cache::CLICK_BUTTON) {
+				if (cache.click_type == Cache::CLICK_BUTTON && cache.click_item != NULL) {
 					// make sure in case of wrong reference after reconstructing whole TreeItems
 					cache.click_item = get_item_at_position(cache.click_pos);
 					emit_signal("button_pressed", cache.click_item, cache.click_column, cache.click_id);
@@ -2934,7 +2934,7 @@ void Tree::_notification(int p_what) {
 
 		if (show_column_titles) {
 
-			//title butons
+			//title buttons
 			int ofs = cache.bg->get_margin(MARGIN_LEFT);
 			for (int i = 0; i < columns.size(); i++) {
 

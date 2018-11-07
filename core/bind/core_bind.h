@@ -80,6 +80,7 @@ public:
 		FLAG_OMIT_EDITOR_PROPERTIES = 8,
 		FLAG_SAVE_BIG_ENDIAN = 16,
 		FLAG_COMPRESS = 32,
+		FLAG_REPLACE_SUBRESOURCE_PATHS = 64,
 	};
 
 	static _ResourceSaver *get_singleton() { return singleton; }
@@ -184,6 +185,7 @@ public:
 	virtual bool is_window_always_on_top() const;
 	virtual void request_attention();
 	virtual void center_window();
+	virtual void move_window_to_foreground();
 
 	virtual void set_borderless_window(bool p_borderless);
 	virtual bool get_borderless_window() const;

@@ -967,7 +967,6 @@ void RasterizerCanvasGLES3::_canvas_item_render_commands(Item *p_item, Item *cur
 				//enable instancing
 
 				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_INSTANCE_CUSTOM, true);
-				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_PARTICLES, true);
 				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_INSTANCING, true);
 				//reset shader and force rebind
 				state.using_texture_rect = true;
@@ -976,10 +975,8 @@ void RasterizerCanvasGLES3::_canvas_item_render_commands(Item *p_item, Item *cur
 				RasterizerStorageGLES3::Texture *texture = _bind_canvas_texture(particles_cmd->texture, particles_cmd->normal_map);
 
 				if (texture) {
-					Size2 texpixel_size(1.0 / (texture->width / particles_cmd->h_frames), 1.0 / (texture->height / particles_cmd->v_frames));
+					Size2 texpixel_size(1.0 / texture->width, 1.0 / texture->height);
 					state.canvas_shader.set_uniform(CanvasShaderGLES3::COLOR_TEXPIXEL_SIZE, texpixel_size);
-				} else {
-					state.canvas_shader.set_uniform(CanvasShaderGLES3::COLOR_TEXPIXEL_SIZE, Vector2(1.0, 1.0));
 				}
 
 				if (!particles->use_local_coords) {
@@ -992,9 +989,6 @@ void RasterizerCanvasGLES3::_canvas_item_render_commands(Item *p_item, Item *cur
 
 					state.canvas_shader.set_uniform(CanvasShaderGLES3::MODELVIEW_MATRIX, state.final_transform * inv_xf);
 				}
-
-				state.canvas_shader.set_uniform(CanvasShaderGLES3::H_FRAMES, particles_cmd->h_frames);
-				state.canvas_shader.set_uniform(CanvasShaderGLES3::V_FRAMES, particles_cmd->v_frames);
 
 				glBindVertexArray(data.particle_quad_array); //use particle quad array
 				glBindBuffer(GL_ARRAY_BUFFER, particles->particle_buffers[0]); //bind particle buffer
@@ -1073,7 +1067,6 @@ void RasterizerCanvasGLES3::_canvas_item_render_commands(Item *p_item, Item *cur
 
 				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_INSTANCE_CUSTOM, false);
 				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_INSTANCING, false);
-				state.canvas_shader.set_conditional(CanvasShaderGLES3::USE_PARTICLES, false);
 				state.using_texture_rect = true;
 				_set_texture_rect_mode(false);
 
@@ -2027,6 +2020,7 @@ void RasterizerCanvasGLES3::initialize() {
 	{
 
 		uint32_t poly_size = GLOBAL_DEF_RST("rendering/limits/buffers/canvas_polygon_buffer_size_kb", 128);
+		ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/buffers/canvas_polygon_buffer_size_kb", PropertyInfo(Variant::INT, "rendering/limits/buffers/canvas_polygon_buffer_size_kb", PROPERTY_HINT_RANGE, "0,256,1,or_greater"));
 		poly_size *= 1024; //kb
 		poly_size = MAX(poly_size, (2 + 2 + 4) * 4 * sizeof(float));
 		glGenBuffers(1, &data.polygon_buffer);
@@ -2074,6 +2068,7 @@ void RasterizerCanvasGLES3::initialize() {
 		glGenVertexArrays(1, &data.polygon_buffer_pointer_array);
 
 		uint32_t index_size = GLOBAL_DEF_RST("rendering/limits/buffers/canvas_polygon_index_buffer_size_kb", 128);
+		ProjectSettings::get_singleton()->set_custom_property_info("rendering/limits/buffers/canvas_polygon_index_buffer_size_kb", PropertyInfo(Variant::INT, "rendering/limits/buffers/canvas_polygon_index_buffer_size_kb", PROPERTY_HINT_RANGE, "0,256,1,or_greater"));
 		index_size *= 1024; //kb
 		glGenBuffers(1, &data.polygon_index_buffer);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.polygon_index_buffer);

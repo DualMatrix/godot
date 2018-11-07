@@ -61,10 +61,12 @@ private:
 	TabContainer *sections;
 
 	MenuButton *add_preset;
+	Button *duplicate_preset;
 	Button *delete_preset;
 	ItemList *presets;
 
 	LineEdit *name;
+	LineEdit *export_path;
 	EditorInspector *parameters;
 	CheckButton *runnable;
 
@@ -106,8 +108,10 @@ private:
 	void _runnable_pressed();
 	void _update_parameters(const String &p_edited_property);
 	void _name_changed(const String &p_string);
+	void _export_path_changed(const String &p_string);
 	void _add_preset(int p_platform);
 	void _edit_preset(int p_index);
+	void _duplicate_preset();
 	void _delete_preset();
 	void _delete_preset_confirm();
 

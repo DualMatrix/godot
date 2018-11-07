@@ -4353,6 +4353,7 @@ void GDScriptParser::_parse_class(ClassNode *p_class) {
 
 							current_export.type = Variant::INT;
 							current_export.hint = is_flags ? PROPERTY_HINT_FLAGS : PROPERTY_HINT_ENUM;
+							current_export.usage |= PROPERTY_USAGE_SCRIPT_VARIABLE;
 							Dictionary enum_values = constant;
 
 							List<Variant> keys;
@@ -6709,9 +6710,15 @@ GDScriptParser::DataType GDScriptParser::_reduce_function_call_type(const Operat
 					}
 				}
 
+				bool rets = false;
 				return_type.has_type = true;
 				return_type.kind = DataType::BUILTIN;
-				return_type.builtin_type = Variant::get_method_return_type(base_type.builtin_type, callee_name);
+				return_type.builtin_type = Variant::get_method_return_type(base_type.builtin_type, callee_name, &rets);
+				// If the method returns, but it might return any type, (Variant::NIL), pretend we don't know the type.
+				// At least make sure we know that it returns
+				if (rets && return_type.builtin_type == Variant::NIL) {
+					return_type.has_type = false;
+				}
 				break;
 			}
 
@@ -7074,7 +7081,6 @@ GDScriptParser::DataType GDScriptParser::_reduce_identifier_type(const DataType 
 	DataType member_type;
 
 	for (int i = 0; i < current_class->variables.size(); i++) {
-		ClassNode::Member m = current_class->variables[i];
 		if (current_class->variables[i].identifier == p_identifier) {
 			member_type = current_class->variables[i].data_type;
 			current_class->variables.write[i].usages += 1;

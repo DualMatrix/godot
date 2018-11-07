@@ -45,6 +45,7 @@
 #include "scene/gui/panel.h"
 #include "scene/gui/panel_container.h"
 #include "scene/gui/popup_menu.h"
+#include "scene/main/canvas_layer.h"
 #include "scene/main/timer.h"
 #include "scene/resources/mesh.h"
 #include "scene/scene_string_names.h"
@@ -443,24 +444,39 @@ void Viewport::_notification(int p_what) {
 
 						uint64_t frame = get_tree()->get_frame();
 
-						Vector2 point = get_canvas_transform().affine_inverse().xform(pos);
 						Physics2DDirectSpaceState::ShapeResult res[64];
-						int rc = ss2d->intersect_point(point, res, 64, Set<RID>(), 0xFFFFFFFF, true, true, true);
-						for (int i = 0; i < rc; i++) {
+						for (Set<CanvasLayer *>::Element *E = canvas_layers.front(); E; E = E->next()) {
+							Transform2D canvas_transform;
+							ObjectID canvas_layer_id;
+							if (E->get()) {
+								// A descendant CanvasLayer
+								canvas_transform = E->get()->get_transform();
+								canvas_layer_id = E->get()->get_instance_id();
+							} else {
+								// This Viewport's builtin canvas
+								canvas_transform = get_canvas_transform();
+								canvas_layer_id = 0;
+							}
 
-							if (res[i].collider_id && res[i].collider) {
-								CollisionObject2D *co = Object::cast_to<CollisionObject2D>(res[i].collider);
-								if (co) {
+							Vector2 point = canvas_transform.affine_inverse().xform(pos);
 
-									Map<ObjectID, uint64_t>::Element *E = physics_2d_mouseover.find(res[i].collider_id);
-									if (!E) {
-										E = physics_2d_mouseover.insert(res[i].collider_id, frame);
-										co->_mouse_enter();
-									} else {
-										E->get() = frame;
+							int rc = ss2d->intersect_point_on_canvas(point, canvas_layer_id, res, 64, Set<RID>(), 0xFFFFFFFF, true, true, true);
+							for (int i = 0; i < rc; i++) {
+
+								if (res[i].collider_id && res[i].collider) {
+									CollisionObject2D *co = Object::cast_to<CollisionObject2D>(res[i].collider);
+									if (co) {
+
+										Map<ObjectID, uint64_t>::Element *E = physics_2d_mouseover.find(res[i].collider_id);
+										if (!E) {
+											E = physics_2d_mouseover.insert(res[i].collider_id, frame);
+											co->_mouse_enter();
+										} else {
+											E->get() = frame;
+										}
+
+										co->_input_event(this, ev, res[i].shape);
 									}
-
-									co->_input_event(this, ev, res[i].shape);
 								}
 							}
 						}
@@ -629,10 +645,8 @@ Rect2 Viewport::get_visible_rect() const {
 	Rect2 r;
 
 	if (size == Size2()) {
-
-		r = Rect2(Point2(), Size2(OS::get_singleton()->get_window_size().width, OS::get_singleton()->get_window_size().height));
+		r = Rect2(Point2(), OS::get_singleton()->get_window_size());
 	} else {
-
 		r = Rect2(Point2(), size);
 	}
 
@@ -855,6 +869,16 @@ void Viewport::_camera_make_next_current(Camera *p_exclude) {
 	}
 }
 #endif
+
+void Viewport::_canvas_layer_add(CanvasLayer *p_canvas_layer) {
+
+	canvas_layers.insert(p_canvas_layer);
+}
+
+void Viewport::_canvas_layer_remove(CanvasLayer *p_canvas_layer) {
+
+	canvas_layers.erase(p_canvas_layer);
+}
 
 void Viewport::set_transparent_background(bool p_enable) {
 
@@ -1841,8 +1865,16 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 				MenuButton *popup_menu_parent = NULL;
 				MenuButton *menu_button = Object::cast_to<MenuButton>(over);
 
-				if (popup_menu)
+				if (popup_menu) {
 					popup_menu_parent = Object::cast_to<MenuButton>(popup_menu->get_parent());
+					if (!popup_menu_parent) {
+						// Go through the parents to see if there's a MenuButton at the end.
+						while (Object::cast_to<PopupMenu>(popup_menu->get_parent())) {
+							popup_menu = Object::cast_to<PopupMenu>(popup_menu->get_parent());
+						}
+						popup_menu_parent = Object::cast_to<MenuButton>(popup_menu->get_parent());
+					}
+				}
 
 				// If the mouse is over a menu button, this menu will open automatically
 				// if there is already a pop-up menu open at the same hierarchical level.
@@ -2905,6 +2937,7 @@ Viewport::Viewport() {
 	parent = NULL;
 	listener = NULL;
 	camera = NULL;
+	canvas_layers.insert(NULL); // This eases picking code (interpreted as the canvas of the Viewport)
 	arvr = false;
 	size_override = false;
 	size_override_stretch = false;
@@ -2945,6 +2978,7 @@ Viewport::Viewport() {
 
 	//gui.tooltip_timer->force_parent_owned();
 	gui.tooltip_delay = GLOBAL_DEF("gui/timers/tooltip_delay_sec", 0.7);
+	ProjectSettings::get_singleton()->set_custom_property_info("gui/timers/tooltip_delay_sec", PropertyInfo(Variant::REAL, "gui/timers/tooltip_delay_sec", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater")); // No negative numbers
 
 	gui.tooltip = NULL;
 	gui.tooltip_label = NULL;

@@ -180,6 +180,7 @@ void _ResourceSaver::_bind_methods() {
 	BIND_ENUM_CONSTANT(FLAG_OMIT_EDITOR_PROPERTIES);
 	BIND_ENUM_CONSTANT(FLAG_SAVE_BIG_ENDIAN);
 	BIND_ENUM_CONSTANT(FLAG_COMPRESS);
+	BIND_ENUM_CONSTANT(FLAG_REPLACE_SUBRESOURCE_PATHS);
 }
 
 _ResourceSaver::_ResourceSaver() {
@@ -1019,6 +1020,11 @@ void _OS::center_window() {
 	OS::get_singleton()->center_window();
 }
 
+void _OS::move_window_to_foreground() {
+
+	OS::get_singleton()->move_window_to_foreground();
+}
+
 bool _OS::is_debug_build() const {
 
 #ifdef DEBUG_ENABLED
@@ -1120,6 +1126,7 @@ void _OS::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("request_attention"), &_OS::request_attention);
 	ClassDB::bind_method(D_METHOD("get_real_window_size"), &_OS::get_real_window_size);
 	ClassDB::bind_method(D_METHOD("center_window"), &_OS::center_window);
+	ClassDB::bind_method(D_METHOD("move_window_to_foreground"), &_OS::move_window_to_foreground);
 
 	ClassDB::bind_method(D_METHOD("set_borderless_window", "borderless"), &_OS::set_borderless_window);
 	ClassDB::bind_method(D_METHOD("get_borderless_window"), &_OS::get_borderless_window);
